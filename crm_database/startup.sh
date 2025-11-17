@@ -159,6 +159,7 @@ echo "Note: db_visualizer is an optional helper. It is NOT started by this conta
 echo "To use it outside the DB container (on your host):"
 echo "  cd secure-crm-platform-40906-40916/crm_database/db_visualizer"
 echo "  source postgres.env"
+echo "  export DATABASE_URL=\"\$POSTGRES_URL\""
 echo "  npm ci && npm run start"
 
 # Exit with 0 when PostgreSQL is healthy

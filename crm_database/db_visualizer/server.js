@@ -8,6 +8,7 @@ if (!process.env.DATABASE_URL) {
   console.error('To run locally, execute:');
   console.error('  cd secure-crm-platform-40906-40916/crm_database/db_visualizer');
   console.error('  source postgres.env');
+  console.error('  export DATABASE_URL=\"$POSTGRES_URL\"');
   console.error('  npm ci && npm run start');
   process.exit(1);
 }
