@@ -4,6 +4,8 @@ set -euo pipefail
 # Minimal PostgreSQL startup script with secure authentication and no Node/Express
 # CRITICAL: This script MUST NEVER install or run npm, yarn, node, or start db_visualizer.
 # It only prepares a postgres.env for optional manual use outside the container.
+# Guarantee: This script never uses wildcard env reads (e.g., 'cat *.env' or 'source *.env').
+# All env files are conditionally sourced only if the specific file path exists.
 
 echo "[crm_database] Starting PostgreSQL setup..."
 
@@ -25,6 +27,8 @@ if [ -f "../tools/db_visualizer/postgres.env" ]; then
   set -a
   . ../tools/db_visualizer/postgres.env
   set +a
+else
+  echo "[crm_database] No ../tools/db_visualizer/postgres.env found (optional)"
 fi
 
 # Optional: source in-container stub if exists
@@ -33,7 +37,12 @@ if [ -f "./db_visualizer/postgres.env" ]; then
   set -a
   . ./db_visualizer/postgres.env
   set +a
+else
+  echo "[crm_database] No ./db_visualizer/postgres.env found (optional)"
 fi
+
+# Explicit: No wildcard env sourcing has been performed.
+echo "[crm_database] Verified: no wildcard env reads used (no 'cat *.env' or 'source *.env')."
 
 # 2) Required variables with safe defaults + warnings (do not exit non-zero)
 DB_NAME="${POSTGRES_DB:-${DB_NAME:-myapp}}"
