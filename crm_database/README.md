@@ -12,13 +12,13 @@ Key points:
 
 db_visualizer policy (out-of-scope for container runtime):
 - db_visualizer is NEVER started by this container (nor by Dockerfile/compose). It is a manual-only helper.
+- db_visualizer has been moved to: secure-crm-platform-40906-40916/tools/db_visualizer
 - To run manually on your host:
-  1) cd secure-crm-platform-40906-40916/crm_database/db_visualizer
+  1) cd secure-crm-platform-40906-40916/tools/db_visualizer
   2) source postgres.env
   3) export DATABASE_URL="$POSTGRES_URL"
-  4) npm ci && npm run start
+  4) nvm use 18 && npm ci && npm run start
 
 Notes:
 - Do not run db_visualizer inside the database container. It is not installed or launched during image build or container startup.
-- express is declared as a dependency and pinned to 4.18.2. The prestart script runs `node -v && npm ci || npm install` to self-heal dependencies.
 - Build and runtime logs for this container should only show PostgreSQL initialization/readiness; there should be no Node/npm output.

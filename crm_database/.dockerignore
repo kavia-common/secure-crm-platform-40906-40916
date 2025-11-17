@@ -1,0 +1,8 @@
+# Exclude any Node/visualizer content from DB image context
+db_visualizer/
+../tools/db_visualizer/
+**/node_modules/
+**/.npmrc
+**/.nvmrc
+**/package-lock.json
+**/package.json

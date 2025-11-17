@@ -1,11 +1,11 @@
 # db_visualizer Verification (Manual)
 
 Prereqs:
-- Node 18.x (nvm use; .nvmrc is provided)
+- Node 18.x (use nvm)
 - Database running locally per crm_database
 
 Steps:
-1) cd secure-crm-platform-40906-40916/crm_database/db_visualizer
+1) cd secure-crm-platform-40906-40916/tools/db_visualizer
 2) source postgres.env
 3) export DATABASE_URL="$POSTGRES_URL"
 4) npm ci

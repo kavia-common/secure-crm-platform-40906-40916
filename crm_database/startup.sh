@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # Minimal PostgreSQL startup script with secure authentication and no Node/Express
-# This script NEVER starts db_visualizer. It only prepares a postgres.env for optional manual use.
+# CRITICAL: This script MUST NEVER install or run npm, yarn, node, or start db_visualizer.
+# It only prepares a postgres.env for optional manual use outside the container.
 
 DB_NAME="${DB_NAME:-myapp}"
 DB_USER="${DB_USER:-appuser}"
