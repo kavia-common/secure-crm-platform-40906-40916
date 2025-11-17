@@ -2,6 +2,7 @@
 set -euo pipefail
 
 # Minimal PostgreSQL startup script with secure authentication and no Node/Express
+# This script NEVER starts db_visualizer. It only prepares a postgres.env for optional manual use.
 
 DB_NAME="${DB_NAME:-myapp}"
 DB_USER="${DB_USER:-appuser}"
@@ -15,8 +16,21 @@ PG_VERSION=$(ls /usr/lib/postgresql/ | head -1)
 PG_BIN="/usr/lib/postgresql/${PG_VERSION}/bin"
 PG_DATA="/var/lib/postgresql/data"
 POSTGRESQL_CONF="${PG_DATA}/postgresql.conf"
+PG_PIDFILE="${PG_DATA}/postmaster.pid"
 
 echo "[crm_database] Found PostgreSQL version: ${PG_VERSION}"
+
+# Helper: check if any process is listening on DB_PORT (fallback if pg_isready not sufficient)
+is_port_in_use() {
+  if command -v ss >/dev/null 2>&1; then
+    ss -ltn | awk '{print $4}' | grep -q ":${DB_PORT}\$"
+  elif command -v netstat >/dev/null 2>&1; then
+    netstat -ltn | awk '{print $4}' | grep -q ":${DB_PORT}\$"
+  else
+    # As a safe fallback, try connecting using pg_isready
+    sudo -u postgres ${PG_BIN}/pg_isready -p ${DB_PORT} >/dev/null 2>&1
+  fi
+}
 
 # Initialize PostgreSQL data directory if it doesn't exist
 if [ ! -f "${PG_DATA}/PG_VERSION" ]; then
@@ -56,9 +70,24 @@ else
   fi
 fi
 
-# If PostgreSQL is already running on the specified port, exit gracefully
-if sudo -u postgres ${PG_BIN}/pg_isready -p ${DB_PORT} > /dev/null 2>&1; then
-  echo "[crm_database] PostgreSQL is already running on port ${DB_PORT}"
+# Robust lock/port checks: don't start if already running
+already_ready=false
+if sudo -u postgres ${PG_BIN}/pg_isready -p ${DB_PORT} >/dev/null 2>&1; then
+  already_ready=true
+fi
+
+if [ -f "${PG_PIDFILE}" ] && ps -p "$(head -n1 "${PG_PIDFILE}" 2>/dev/null || echo 0)" >/dev/null 2>&1; then
+  echo "[crm_database] Detected running PostgreSQL via pidfile at ${PG_PIDFILE}"
+  already_ready=true
+fi
+
+if is_port_in_use; then
+  echo "[crm_database] Detected an active listener on port ${DB_PORT}. Assuming PostgreSQL is running."
+  already_ready=true
+fi
+
+if [ "${already_ready}" = true ]; then
+  echo "[crm_database] PostgreSQL is already running. Skipping server start."
 else
   # Start PostgreSQL server in background
   echo "[crm_database] Starting PostgreSQL server..."
@@ -66,12 +95,12 @@ else
 
   # Wait for PostgreSQL to start
   echo "[crm_database] Waiting for PostgreSQL to start..."
-  for i in {1..20}; do
+  for i in {1..30}; do
     if sudo -u postgres ${PG_BIN}/pg_isready -p ${DB_PORT} > /dev/null 2>&1; then
       echo "[crm_database] PostgreSQL is ready!"
       break
     fi
-    echo "  waiting... ($i/20)"
+    echo "  waiting... ($i/30)"
     sleep 1
   done
 fi
@@ -129,4 +158,4 @@ echo ""
 echo "Note: db_visualizer is an optional helper. It is NOT started by this container."
 echo "To use it outside the DB container:"
 echo "  cd secure-crm-platform-40906-40916/crm_database/db_visualizer"
-echo "  source postgres.env && npm install && npm run start"
+echo "  source postgres.env && npm ci && npm run start"
