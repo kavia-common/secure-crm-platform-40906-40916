@@ -10,14 +10,14 @@ Key points:
 - The container entrypoint uses startup.sh exclusively to setup and run PostgreSQL.
 - Container startup never installs Node modules and never runs npm/node or the db_visualizer.
 
-Optional helper (NOT part of this container):
-- db_visualizer is a lightweight Node tool meant to run separately for quick inspection.
-- To use it outside the DB container (manual steps on your host):
+db_visualizer policy (out-of-scope for container runtime):
+- db_visualizer is NEVER started by this container (nor by Dockerfile/compose). It is a manual-only helper.
+- To run manually on your host:
   1) cd secure-crm-platform-40906-40916/crm_database/db_visualizer
   2) source postgres.env
-  3) npm run start   # Note: a prestart hook will auto-run `npm ci` if node_modules is missing
+  3) npm ci && npm run start
 
 Notes:
 - Do not run db_visualizer inside the database container. It is not installed or launched during image build or container startup.
-- The db_visualizer/package.json pins express to 4.18.2. On first start, if node_modules is absent, the prestart hook will run `npm ci` automatically.
+- express is declared as a dependency and pinned to 4.18.2. The prestart script runs `node -v && npm ci || npm install` to self-heal dependencies.
 - Build and runtime logs for this container should only show PostgreSQL initialization/readiness; there should be no Node/npm output.

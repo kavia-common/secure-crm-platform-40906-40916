@@ -158,4 +158,13 @@ echo ""
 echo "Note: db_visualizer is an optional helper. It is NOT started by this container."
 echo "To use it outside the DB container (on your host):"
 echo "  cd secure-crm-platform-40906-40916/crm_database/db_visualizer"
-echo "  source postgres.env && npm run start   # prestart will auto-install if needed"
+echo "  source postgres.env"
+echo "  npm ci && npm run start"
+
+# Exit with 0 when PostgreSQL is healthy
+if sudo -u postgres ${PG_BIN}/pg_isready -p ${DB_PORT} >/dev/null 2>&1; then
+  exit 0
+else
+  echo "[crm_database] Warning: pg_isready failed after setup; check logs."
+  exit 1
+fi

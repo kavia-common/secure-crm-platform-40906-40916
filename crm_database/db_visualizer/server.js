@@ -2,6 +2,16 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 
+// Guard: Require DATABASE_URL for primary connection context
+if (!process.env.DATABASE_URL) {
+  console.error('ERROR: DATABASE_URL is not set.');
+  console.error('To run locally, execute:');
+  console.error('  cd secure-crm-platform-40906-40916/crm_database/db_visualizer');
+  console.error('  source postgres.env');
+  console.error('  npm ci && npm run start');
+  process.exit(1);
+}
+
 // Database clients
 const { Pool } = require('pg');
 const mysql = require('mysql2/promise');
