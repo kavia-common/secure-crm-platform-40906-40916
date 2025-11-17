@@ -5,12 +5,47 @@ set -euo pipefail
 # CRITICAL: This script MUST NEVER install or run npm, yarn, node, or start db_visualizer.
 # It only prepares a postgres.env for optional manual use outside the container.
 
-DB_NAME="${DB_NAME:-myapp}"
-DB_USER="${DB_USER:-appuser}"
-DB_PASSWORD="${DB_PASSWORD:-dbuser123}"
-DB_PORT="${DB_PORT:-5000}"
-
 echo "[crm_database] Starting PostgreSQL setup..."
+
+# 1) Safe env loading with conditional sourcing (no globbing, no cat on *.env)
+#    - Local .env in container root (optional)
+#    - Known helper envs in tools if present (optional)
+if [ -f ".env" ]; then
+  echo "[crm_database] Loading .env from project root"
+  set -a
+  . ./.env
+  set +a
+else
+  echo "[crm_database] No .env found in container root (this is optional)"
+fi
+
+# Optional: source tools/db_visualizer/postgres.env if exists (for convenience only)
+if [ -f "../tools/db_visualizer/postgres.env" ]; then
+  echo "[crm_database] Loading tools/db_visualizer/postgres.env (optional)"
+  set -a
+  . ../tools/db_visualizer/postgres.env
+  set +a
+fi
+
+# Optional: source in-container stub if exists
+if [ -f "./db_visualizer/postgres.env" ]; then
+  echo "[crm_database] Loading crm_database/db_visualizer/postgres.env (optional)"
+  set -a
+  . ./db_visualizer/postgres.env
+  set +a
+fi
+
+# 2) Required variables with safe defaults + warnings (do not exit non-zero)
+DB_NAME="${POSTGRES_DB:-${DB_NAME:-myapp}}"
+DB_USER="${POSTGRES_USER:-${DB_USER:-appuser}}"
+DB_PASSWORD="${POSTGRES_PASSWORD:-${DB_PASSWORD:-dbuser123}}"
+DB_PORT="${POSTGRES_PORT:-${DB_PORT:-5000}}"
+
+# Warn if any were absent and we fell back to defaults
+[ -z "${POSTGRES_DB:-}" ] && echo "[crm_database][warn] POSTGRES_DB not set; defaulting to '${DB_NAME}'"
+[ -z "${POSTGRES_USER:-}" ] && echo "[crm_database][warn] POSTGRES_USER not set; defaulting to '${DB_USER}'"
+[ -z "${POSTGRES_PASSWORD:-}" ] && echo "[crm_database][warn] POSTGRES_PASSWORD not set; defaulting to '${DB_PASSWORD}'"
+[ -z "${POSTGRES_PORT:-}" ] && echo "[crm_database][warn] POSTGRES_PORT not set; defaulting to '${DB_PORT}'"
 
 # Find PostgreSQL version and set paths
 PG_VERSION=$(ls /usr/lib/postgresql/ | head -1)
@@ -168,5 +203,6 @@ if sudo -u postgres ${PG_BIN}/pg_isready -p ${DB_PORT} >/dev/null 2>&1; then
   exit 0
 else
   echo "[crm_database] Warning: pg_isready failed after setup; check logs."
+  # Do not fail hard due to optional env absence; but if Postgres isn't ready, it's a real issue.
   exit 1
 fi
