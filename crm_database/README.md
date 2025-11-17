@@ -3,7 +3,7 @@
 This container provides a PostgreSQL database for the CRM system. It includes initialization SQL scripts that create core schemas and tables for customers, service requests, complaints, interactions, and audit logs.
 
 Key points:
-- No references to any non-existent `db_visualizer` directory are present.
+- No references to any non-existent `db_visualizer` directory are present anywhere in the repo or build configs.
 - Initialization scripts are located in `./init/*.sql` and are automatically executed on first run by the official PostgreSQL entrypoint.
 - Secrets are never hard-coded. Provide `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` at runtime.
 
