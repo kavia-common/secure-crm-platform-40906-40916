@@ -16,7 +16,7 @@ if [ -f ".env" ]; then
   . ./.env
   set +a
 else
-  echo "[crm_database] No .env found in container root (this is optional)"
+  echo "[crm_database] No .env found in container root (optional; continuing with defaults)"
 fi
 
 # Optional: source tools/db_visualizer/postgres.env if exists (for convenience only)
@@ -198,11 +198,12 @@ echo "  source postgres.env"
 echo "  export DATABASE_URL=\"\$POSTGRES_URL\""
 echo "  npm ci && npm run start"
 
-# Exit with 0 when PostgreSQL is healthy
+# Exit with 0 when PostgreSQL is healthy (warn if not)
 if sudo -u postgres ${PG_BIN}/pg_isready -p ${DB_PORT} >/dev/null 2>&1; then
+  echo "[crm_database] PostgreSQL health check passed."
   exit 0
 else
-  echo "[crm_database] Warning: pg_isready failed after setup; check logs."
-  # Do not fail hard due to optional env absence; but if Postgres isn't ready, it's a real issue.
+  echo "[crm_database][warn] pg_isready failed after setup; check logs."
+  # Exit non-zero only if PostgreSQL is actually not ready; absence of env files never causes failure earlier.
   exit 1
 fi
